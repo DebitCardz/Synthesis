@@ -1,4 +1,4 @@
-import { Octokit } from "../../deps.ts";
+import {Octokit} from "../../deps.ts";
 import {config} from "../types/Config.ts"
 
 const octokit = new Octokit({ auth: config.github.token });
