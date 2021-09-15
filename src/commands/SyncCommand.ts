@@ -1,4 +1,12 @@
-import { Command, CommandContext, Embed, User } from "../../deps.ts";
+import {
+  ChannelTypes,
+  Command,
+  CommandContext,
+  Embed,
+  Guild,
+  GuildChannel,
+  User,
+} from "../../deps.ts";
 import { config } from "../types/Config.ts";
 import {
   formatUrl,
@@ -6,6 +14,7 @@ import {
   getIssues,
 } from "../github/integration.ts";
 import { formatIssue, formatIssueComment } from "../util/formatter.ts";
+import { trueEquals } from "../util/functions.ts";
 
 export default class SyncCommand extends Command {
   name = "sync";
@@ -13,9 +22,17 @@ export default class SyncCommand extends Command {
   async execute(ctx: CommandContext) {
     const start = Date.now();
 
+    // DM channel or something?
+    if (!ctx.guild) {
+      return;
+    }
+
     const replyMessage = await ctx.message.reply(
       `Synchronizing issues with **${config.github.repo}**.`,
     );
+
+    // TODO: We can store this somewhere else later, for now this works.
+    const issueChannel = await this.resetIssuesChannel(ctx.guild);
 
     // grab issues
     const issues = (await getIssues()).sort((i1, i2) => i1.number - i2.number);
@@ -23,7 +40,7 @@ export default class SyncCommand extends Command {
 
     for (const issue of issues) {
       const message = await ctx.client.channels.sendMessage(
-        config.discord.channels.issues,
+        issueChannel.id,
         formatIssue({
           ...issue,
           id: issue.number,
@@ -58,16 +75,37 @@ export default class SyncCommand extends Command {
       `Process complete in **${Date.now() - start}ms**.`,
       this.getSyncCompleteEmbed(
         ctx.author,
-        start,
         issues.length,
         totalComments,
       ),
     );
   }
 
+  private async resetIssuesChannel(guild: Guild): Promise<GuildChannel> {
+    const configChannelName = config.discord.channels.issues.name;
+    const configParentId = config.discord.channels.issues.parent;
+
+    // Remove all previous issue channels so we can reinitialize it.
+    for (const channel of await guild.channels.array()) {
+      if (channel.type !== ChannelTypes.GUILD_TEXT) continue;
+
+      if (
+        trueEquals(configParentId, channel.parentID) &&
+        trueEquals(configChannelName, channel.name)
+      ) {
+        await guild.channels.delete(channel.id);
+      }
+    }
+
+    return await guild.createChannel({
+      name: config.discord.channels.issues.name,
+      parent: config.discord.channels.issues.parent,
+      type: ChannelTypes.GUILD_TEXT,
+    });
+  }
+
   private getSyncCompleteEmbed(
     author: User,
-    start: number,
     openIssues: number,
     totalComments: number,
   ): Embed {

@@ -3,7 +3,10 @@ export default interface Config {
     secret: string;
     channels: {
       logs: string;
-      issues: string;
+      issues: {
+        parent?: string;
+        name: string;
+      };
     };
   };
   github: {
