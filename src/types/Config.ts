@@ -3,10 +3,13 @@ export default interface Config {
         secret: string,
         channels: {
             logs: string,
+            issues: string,
         },
     },
     github: {
         token: string,
+        user: string,
+        repo: string,
     },
 }
 
