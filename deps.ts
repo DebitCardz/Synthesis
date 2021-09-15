@@ -6,6 +6,7 @@ export {
   Embed,
   GatewayIntents,
   Message,
+  User,
 } from "https://deno.land/x/harmony@v2.1.3/mod.ts";
 export type { CommandContext } from "https://deno.land/x/harmony@v2.1.3/mod.ts";
 // Octokit

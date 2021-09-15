@@ -1,4 +1,4 @@
-import { Command, CommandContext } from "../../deps.ts";
+import { Command, CommandContext, Embed, User } from "../../deps.ts";
 import { config } from "../types/Config.ts";
 import {
   formatUrl,
@@ -11,10 +11,15 @@ export default class SyncCommand extends Command {
   name = "sync";
 
   async execute(ctx: CommandContext) {
-    ctx.message.reply("Syncing...");
+    const start = Date.now();
+
+    const replyMessage = await ctx.message.reply(
+      `Synchronizing issues with **${config.github.repo}**.`,
+    );
 
     // grab issues
     const issues = (await getIssues()).sort((i1, i2) => i1.number - i2.number);
+    let totalComments = 0;
 
     for (const issue of issues) {
       const message = await ctx.client.channels.sendMessage(
@@ -35,6 +40,8 @@ export default class SyncCommand extends Command {
 
       // grab issue comments
       const comments = await getIssueComments(issue.number);
+      totalComments += comments.length;
+
       const channelId = threadChannel.id;
       for (const comment of comments) {
         await ctx.client.channels.sendMessage(
@@ -46,5 +53,42 @@ export default class SyncCommand extends Command {
         );
       }
     }
+
+    await replyMessage.edit(
+      `Process complete in **${Date.now() - start}ms**.`,
+      this.getSyncCompleteEmbed(
+        ctx.author,
+        start,
+        issues.length,
+        totalComments,
+      ),
+    );
+  }
+
+  private getSyncCompleteEmbed(
+    author: User,
+    start: number,
+    openIssues: number,
+    totalComments: number,
+  ): Embed {
+    return new Embed({
+      fields: [
+        {
+          name: "Open Issues",
+          value: `${openIssues}`,
+          inline: true,
+        },
+        {
+          name: "Total Comments",
+          value: `${totalComments}`,
+          inline: true,
+        },
+      ],
+      author: {
+        name: "Synchronization Complete",
+        icon_url: author.avatarURL("dynamic"),
+      },
+      color: 0x00FF00,
+    });
   }
 }
