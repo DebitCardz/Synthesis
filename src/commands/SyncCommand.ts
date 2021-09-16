@@ -7,20 +7,21 @@ import {
   GuildChannel,
   User,
 } from "../../deps.ts";
-import { config } from "../types/Config.ts";
+import Config from "../types/Config.ts";
 import {
   formatUrl,
   getIssueComments,
   getIssues,
 } from "../github/integration.ts";
 import { formatIssue, formatIssueComment } from "../util/formatter.ts";
-import { trueEquals } from "../util/functions.ts";
+import { requireSynthesisConfig, trueEquals } from "../util/functions.ts";
 
 export default class SyncCommand extends Command {
   name = "sync";
 
   async execute(ctx: CommandContext) {
     const start = Date.now();
+    const config = requireSynthesisConfig(ctx);
 
     // DM channel or something?
     if (!ctx.guild) {
@@ -32,7 +33,7 @@ export default class SyncCommand extends Command {
     );
 
     // TODO: We can store this somewhere else later, for now this works.
-    const issueChannel = await this.resetIssuesChannel(ctx.guild);
+    const issueChannel = await this.resetIssuesChannel(config, ctx.guild);
 
     // grab issues
     const issues = (await getIssues()).sort((i1, i2) => i1.number - i2.number);
@@ -81,7 +82,10 @@ export default class SyncCommand extends Command {
     );
   }
 
-  private async resetIssuesChannel(guild: Guild): Promise<GuildChannel> {
+  private async resetIssuesChannel(
+    config: Config,
+    guild: Guild,
+  ): Promise<GuildChannel> {
     const configChannelName = config.discord.channels.issues.name;
     const configParentId = config.discord.channels.issues.parent;
 

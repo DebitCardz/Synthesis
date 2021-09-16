@@ -12,7 +12,9 @@ export async function getIssues(): Promise<Issue[]> {
   })).data as Issue[];
 }
 
-export async function getIssueComments(id: number): Promise<IssueComment[]> {
+export async function getIssueComments(
+  id: number,
+): Promise<IssueComment[]> {
   return (await octokit.request(
     "GET /repos/{owner}/{repo}/issues/{issue_number}/comments",
     {
@@ -23,7 +25,10 @@ export async function getIssueComments(id: number): Promise<IssueComment[]> {
   )).data as IssueComment[];
 }
 
-export function formatUrl(issueNumber: number, issueComment?: number) {
+export function formatUrl(
+  issueNumber: number,
+  issueComment?: number,
+) {
   return `https://github.com/${config.github.user}/${config.github.repo}/issues/${issueNumber}${
     issueComment === undefined ? "" : `#issuecomment-${issueComment}`
   }`;
