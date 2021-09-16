@@ -5,12 +5,16 @@ export {
   Command,
   CommandClient,
   Embed,
+  event,
   GatewayIntents,
   Guild,
   GuildChannel,
   Message,
   User,
-} from "https://deno.land/x/harmony@v2.1.3/mod.ts";
-export type { CommandContext } from "https://deno.land/x/harmony@v2.1.3/mod.ts";
+} from "https://code.harmony.rocks/v2.1.3";
+export type {
+  CommandClientOptions,
+  CommandContext,
+} from "https://code.harmony.rocks/v2.1.3";
 // Octokit
 export { Octokit } from "https://cdn.skypack.dev/@octokit/core?dts";
