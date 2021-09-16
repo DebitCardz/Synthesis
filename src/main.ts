@@ -10,4 +10,9 @@ const client = new SynthesisClient({
     GatewayIntents.GUILD_MESSAGES,
   ],
 });
-client.connect();
+
+if (!config.discord.secret) {
+  throw new Error("Please provide your discord bot token in secrets/config.json.");
+} else {
+  client.connect();
+}
