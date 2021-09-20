@@ -16,3 +16,11 @@ export const requireSynthesisConfigFromClient = (
 
 export const requireSynthesisConfig = (ctx: CommandContext): Config =>
   requireSynthesisConfigFromClient(ctx.client);
+
+export const requireSynthesisClient = (client: CommandClient) => {
+  if (client instanceof SynthesisClient) {
+    return client as SynthesisClient;
+  } else {
+    throw new Error("Client isn't an instanceof SynthesisClient.");
+  }
+};

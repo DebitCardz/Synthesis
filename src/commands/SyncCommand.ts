@@ -8,22 +8,22 @@ import {
   User,
 } from "../../deps.ts";
 import Config from "../types/Config.ts";
+import SynthesisClient from "../client.ts";
 import {
+  formatIssue,
+  formatIssueComment,
   formatUrl,
-  getIssueComments,
-  getIssues,
-} from "../github/integration.ts";
-import { formatIssue, formatIssueComment } from "../util/formatter.ts";
-import { requireSynthesisConfig, trueEquals } from "../util/functions.ts";
+} from "../util/formatter.ts";
+import { requireSynthesisClient, trueEquals } from "../util/functions.ts";
 
 export default class SyncCommand extends Command {
   name = "sync";
 
   async execute(ctx: CommandContext) {
     const start = Date.now();
-    const config = requireSynthesisConfig(ctx);
+    const client = requireSynthesisClient(ctx.client);
+    const config = client.config;
 
-    // DM channel or something?
     if (!ctx.guild) {
       return;
     }
@@ -32,69 +32,96 @@ export default class SyncCommand extends Command {
       `Synchronizing issues with **${config.github.repo}**.`,
     );
 
-    // TODO: We can store this somewhere else later, for now this works.
-    const issueChannel = await this.resetIssuesChannel(config, ctx.guild);
+    const information = await this.resync(client, ctx.guild);
 
-    // grab issues
-    const issues = (await getIssues()).sort((i1, i2) => i1.number - i2.number);
+    await replyMessage.edit(
+      `Process complete in **${Date.now() - start}ms**.`,
+      this.getSyncCompleteEmbed(
+        ctx.author,
+        information.totalIssues,
+        information.totalComments,
+      ),
+    );
+  }
+
+  /**
+   * Resync the discord with all github issues and pull requests.
+   * @returns Information about the sync request.
+   */
+  private async resync(
+    client: SynthesisClient,
+    guild: Guild,
+  ): Promise<SyncResult> {
+    const github = client.github;
+    const config = client.config;
+
+    const issuesChannel = await this.generateIssuesChannel(config, guild);
+
+    const issues = (await github.getIssues()).sort((i1, i2) =>
+      i1.number - i2.number
+    );
     let totalComments = 0;
 
     for (const issue of issues) {
-      const message = await ctx.client.channels.sendMessage(
-        issueChannel.id,
+      const message = await client.channels.sendMessage(
+        issuesChannel.id,
         formatIssue({
           ...issue,
           id: issue.number,
-          url: formatUrl(issue.number),
+          url: formatUrl(config.github.user, config.github.repo, issue.number),
         }),
       );
 
-      const threadChannel = await message.startThread({
+      const issueThread = await message.startThread({
         name: `(${issue.number}) ${
           issue.title.substr(0, Math.min(issue.title.length, 50))
         }`,
         autoArchiveDuration: 1440,
       });
 
-      // grab issue comments
-      const comments = await getIssueComments(issue.number);
+      const comments = await github.getIssueComments(issue.number);
       totalComments += comments.length;
 
-      const channelId = threadChannel.id;
       for (const comment of comments) {
-        await ctx.client.channels.sendMessage(
-          channelId,
+        await client.channels.sendMessage(
+          issueThread.id,
           formatIssueComment({
             ...comment,
-            url: formatUrl(issue.number, comment.id),
+            url: formatUrl(
+              config.github.user,
+              config.github.repo,
+              issue.number,
+              comment.id,
+            ),
           }),
         );
       }
     }
 
-    await replyMessage.edit(
-      `Process complete in **${Date.now() - start}ms**.`,
-      this.getSyncCompleteEmbed(
-        ctx.author,
-        issues.length,
-        totalComments,
-      ),
-    );
+    return {
+      issuesChannel: issuesChannel,
+      totalIssues: issues.length,
+      totalComments: totalComments,
+    };
   }
 
-  private async resetIssuesChannel(
+  /**
+   * Remove the existing issues channel and replace it with a new one.
+   * @returns New issues channel.
+   */
+  private async generateIssuesChannel(
     config: Config,
     guild: Guild,
   ): Promise<GuildChannel> {
     const configChannelName = config.discord.channels.issues.name;
-    const configParentId = config.discord.channels.issues.parent;
+    const configChannelParentId = config.discord.channels.issues.parent;
 
     // Remove all previous issue channels so we can reinitialize it.
     for (const channel of await guild.channels.array()) {
       if (channel.type !== ChannelTypes.GUILD_TEXT) continue;
 
       if (
-        trueEquals(configParentId, channel.parentID) &&
+        trueEquals(configChannelParentId, channel.parentID) &&
         trueEquals(configChannelName, channel.name)
       ) {
         await guild.channels.delete(channel.id);
@@ -133,4 +160,10 @@ export default class SyncCommand extends Command {
       color: 0x00FF00,
     });
   }
+}
+
+interface SyncResult {
+  issuesChannel: GuildChannel;
+  totalIssues: number;
+  totalComments: number;
 }

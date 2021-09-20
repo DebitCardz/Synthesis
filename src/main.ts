@@ -12,7 +12,9 @@ const client = new SynthesisClient({
 });
 
 if (!config.discord.secret) {
-  throw new Error("Please provide your discord bot token in secrets/config.json.");
+  throw new Error(
+    "Please provide your discord bot token in secrets/config.json.",
+  );
 } else {
   client.connect();
 }

@@ -38,3 +38,15 @@ export function formatIssueComment(message: FormattableMessage): Embed {
     },
   });
 }
+
+export function formatUrl(
+  user: string,
+  repo: string,
+  issueNumber: number,
+  issueComment?: number,
+): string {
+  // TODO: If user is running a custom github impl we have to reflect that url.
+  return `https://github.com/${user}/${repo}/issues/${issueNumber}${
+    !issueComment ? "" : `#issuecomment-${issueComment}`
+  }`;
+}
