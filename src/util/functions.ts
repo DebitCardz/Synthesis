@@ -7,11 +7,7 @@ export const trueEquals = (a: any, b: any): boolean => (!a && !b) || (a === b);
 export const requireSynthesisConfigFromClient = (
   client: CommandClient,
 ): Config => {
-  if (client instanceof SynthesisClient) {
-    return (client as SynthesisClient).config;
-  } else {
-    throw new Error("Client isn't an instanceof SynthesisClient.");
-  }
+  return requireSynthesisClient(client).config
 };
 
 export const requireSynthesisConfig = (ctx: CommandContext): Config =>
