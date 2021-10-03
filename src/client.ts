@@ -1,10 +1,15 @@
-import { CommandClient, CommandClientOptions, event } from "../deps.ts";
-import SyncCommand from "./commands/SyncCommand.ts";
+import {
+  Command,
+  CommandClient,
+  CommandClientOptions,
+  event,
+} from "../deps.ts";
 import Config, {
   DiscordConfiguration,
   GithubConfiguration,
 } from "./types/Config.ts";
 import GithubIntegration from "./github/integration.ts";
+import { getContentsOfAllDirectories } from "./util/functions.ts";
 
 export default class SynthesisClient extends CommandClient {
   // cache here
@@ -20,7 +25,24 @@ export default class SynthesisClient extends CommandClient {
 
     this.github = new GithubIntegration(this.config.github);
 
-    this.commands.add(SyncCommand);
+    this.registerCommands();
+    this.registerEvents();
+  }
+
+  private async registerCommands() {
+    getContentsOfAllDirectories("./commands/").forEach(async (file) => {
+      const { default: command } = await import(file);
+      if (command === undefined || command! instanceof Command) {
+        console.error(`A file in commands is not a valid command.`);
+        return;
+      }
+
+      this.commands.add(command);
+    });
+  }
+
+  private async registerEvents() {
+    // TODO: Implement.
   }
 
   public get discordConfig(): DiscordConfiguration {
