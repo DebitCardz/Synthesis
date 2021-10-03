@@ -60,7 +60,7 @@ export function getContentsOfAllDirectories(
 
     const contents = getOrganizedDirectory(dir);
     contents.directories.forEach((directoryName) =>
-      scanDirectory(`${dir}/${directoryName}`)
+      scanDirectory(`${dir.toString()}/${directoryName}`)
     );
 
     // Add the file location to each file name.
