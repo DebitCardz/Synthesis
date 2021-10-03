@@ -32,7 +32,7 @@ export default class SynthesisClient extends CommandClient {
   private async registerCommands() {
     getContentsOfAllDirectories("./commands/").forEach(async (file) => {
       const { default: command } = await import(file);
-      if (command === undefined || command! instanceof Command) {
+      if (command === undefined || command !instanceof Command) {
         console.error(`A file in commands is not a valid command.`);
         return;
       }
