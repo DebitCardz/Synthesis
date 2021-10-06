@@ -3,6 +3,7 @@ import {
   CommandClient,
   CommandClientOptions,
   event,
+  Extension
 } from "../deps.ts";
 import Config, {
   DiscordConfiguration,
@@ -42,7 +43,15 @@ export default class SynthesisClient extends CommandClient {
   }
 
   private async registerEvents() {
-    // TODO: Implement.
+    getContentsOfAllDirectories("./events/").forEach(async (file) => {
+      const { default: event } = await import(file);
+      if (event === undefined || event !instanceof Extension) {
+        console.error(`A file in events is not a valid extension.`);
+        return;
+      }
+
+      this.extensions.load(event);
+    });
   }
 
   public get discordConfig(): DiscordConfiguration {

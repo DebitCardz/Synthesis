@@ -11,6 +11,8 @@ export {
   GuildChannel,
   Message,
   User,
+  Extension,
+  ThreadChannel
 } from "https://code.harmony.rocks/v2.1.3";
 export type {
   CommandClientOptions,

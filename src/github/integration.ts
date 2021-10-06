@@ -2,6 +2,7 @@ import { Octokit } from "../../deps.ts";
 import { GithubConfiguration } from "../types/Config.ts";
 import Issue from "../types/Issue.ts";
 import IssueComment from "../types/IssueComment.ts";
+import { getIssueHeader } from "../util/formatter.ts";
 
 export default class GithubIntegration {
   private octokit: Octokit;
@@ -33,5 +34,20 @@ export default class GithubIntegration {
         issue_number: id,
       },
     )).data as IssueComment[];
+  }
+
+  public async postIssueComment(
+    id: number,
+    body: string
+  ) {
+    await this.octokit.request(
+      "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
+      {
+        owner: this.githubConfig.user,
+        repo: this.githubConfig.repo,
+        body: `${getIssueHeader()}\n${body}`,
+        issue_number: id,
+      }
+    )
   }
 }

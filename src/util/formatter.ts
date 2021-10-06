@@ -50,3 +50,11 @@ export function formatUrl(
     !issueComment ? "" : `#issuecomment-${issueComment}`
   }`;
 }
+
+export function getIssueHeader(): string {
+  return [
+    "This is a header thing",
+    "testintg",
+    "~----------------------------------~"
+  ].join("\n")
+}
